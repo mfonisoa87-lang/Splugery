@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Splugery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+      colors: {
+        violet: { DEFAULT: '#7C3AED', light: '#A78BFA' },
+        coral:  { DEFAULT: '#FF6B35' },
+        gold:   { DEFAULT: '#F59E0B' },
+        dark:   { DEFAULT: '#0D0D14', card: '#16161F', border: '#242435' }
+      }
+    }
+  }
+}
+</script>
+<style>
+  * { font-family: 'Plus Jakarta Sans', sans-serif; }
+  body { overscroll-behavior: none; }
+
+  /* Gradients */
+  .grad { background: linear-gradient(135deg, #7C3AED, #FF6B35); }
+  .grad-text { background: linear-gradient(135deg, #7C3AED, #FF6B35); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .grad-gold { background: linear-gradient(135deg, #F59E0B, #FF6B35); }
+
+  /* Glass effect */
+  .glass { background: rgba(255,255,255,0.15); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.25); }
+
+  /* Card shadows */
+  .card { box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
+  .dark .card { box-shadow: 0 2px 16px rgba(0,0,0,0.3); }
+
+  /* Scrollbar hide */
+  .no-scroll::-webkit-scrollbar { display: none; }
+  .no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Animations */
+  @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+  .fade-up { animation: fadeUp 0.4s ease both; }
+  .fade-in { animation: fadeIn 0.3s ease both; }
+  .slide-up { animation: slideUp 0.35s cubic-bezier(0.32,0.72,0,1) both; }
+
+  /* Screen management */
+  [data-screen] { display: none; }
+  [data-screen].active { display: flex; flex-direction: column; }
+
+  /* Onboarding step management */
+  [data-step] { display: none; }
+  [data-step].active { display: flex; flex-direction: column; }
+
+  /* Modal overlay */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:90; display:none; align-items:flex-end; }
+  .modal-overlay.open { display:flex; animation: fadeIn 0.2s ease; }
+  .modal-sheet { width:100%; background:white; border-radius:24px 24px 0 0; padding:24px; animation: slideUp 0.35s ease; }
+  .dark .modal-sheet { background:#16161F; }
+
+  /* Progress bar */
+  .progress-bar { height:4px; background:rgba(255,255,255,0.3); border-radius:2px; overflow:hidden; }
+  .progress-fill { height:100%; background:white; border-radius:2px; transition:width 0.4s ease; }
+
+  /* Toggle switch */
+  .toggle { position:relative; width:44px; height:24px; }
+  .toggle input { opacity:0; width:0; height:0; }
+  .toggle-slider { position:absolute; inset:0; background:#ddd; border-radius:12px; cursor:pointer; transition:0.3s; }
+  .toggle-slider:before { content:''; position:absolute; width:18px; height:18px; left:3px; top:3px; background:white; border-radius:50%; transition:0.3s; }
+  input:checked + .toggle-slider { background:#7C3AED; }
+  input:checked + .toggle-slider:before { transform:translateX(20px); }
+
+  /* Pill badges */
+  .pill-violet { background:rgba(124,58,237,0.1); color:#7C3AED; border-radius:999px; padding:2px 10px; font-size:11px; font-weight:700; }
+  .pill-coral { background:rgba(255,107,53,0.1); color:#FF6B35; border-radius:999px; padding:2px 10px; font-size:11px; font-weight:700; }
+  .dark .pill-violet { background:rgba(124,58,237,0.2); color:#A78BFA; }
+  .dark .pill-coral { background:rgba(255,107,53,0.2); color:#FF6B35; }
+
+  /* Active bottom nav item */
+  .nav-item.nav-active .nav-icon-wrap { background: linear-gradient(135deg,#7C3AED,#FF6B35); }
+  .nav-item.nav-active .nav-icon-wrap svg { color:white !important; }
+  .nav-item.nav-active span { color:#7C3AED; }
+  .dark .nav-item.nav-active span { color:#A78BFA; }
+
+  /* Smooth transitions */
+  * { -webkit-tap-highlight-color: transparent; }
+  button { cursor: pointer; }
+</style>
+</head>
+
+<body class="bg-neutral-50 text-neutral-900 dark:bg-dark dark:text-white min-h-screen">
+
+<!-- ═══════════════════════════════════════════════
+     ONBOARDING
+═══════════════════════════════════════════════ -->
+<div id="onboarding" class="min-h-screen grad flex flex-col items-center justify-center p-6">
+
+  <!-- Step 1: Welcome -->
+  <div data-step="1" class="active w-full max-w-sm fade-up">
+    <div class="text-center mb-8">
+      <div class="w-20 h-20 rounded-3xl glass flex items-center justify-center mx-auto mb-5 shadow-2xl">
+        <span class="text-4xl">👗</span>
+      </div>
+      <h1 class="text-4xl font-black text-white mb-2 tracking-tight">SPLUGERY</h1>
+      <p class="text-white/80 text-base leading-relaxed">Community-driven fashion &amp; finance.<br/>Style together. Invest together. Win together.</p>
+    </div>
+
+    <div class="glass rounded-3xl p-5 mb-6 space-y-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-xl">🛍️</div>
+        <div>
+          <p class="text-white font-bold text-sm">Fashion Marketplace</p>
+          <p class="text-white/70 text-xs">Thrift & new styles from creators</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-xl">👥</div>
+        <div>
+          <p class="text-white font-bold text-sm">Style Squads</p>
+          <p class="text-white/70 text-xs">Save together, slay together</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-xl">📈</div>
+        <div>
+          <p class="text-white font-bold text-sm">Investment Clubs</p>
+          <p class="text-white/70 text-xs">Grow your fashion portfolio</p>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="goStep(2)" class="w-full bg-white text-violet font-extrabold text-base py-4 rounded-2xl shadow-xl active:scale-95 transition-transform">
+      Get Started ✨
+    </button>
+    <button onclick="skipOnboarding()" class="w-full text-white/60 text-sm mt-3 py-2">Already have an account? Sign in</button>
+  </div>
+
+  <!-- Step 2: Buyer or Seller -->
+  <div data-step="2" class="w-full max-w-sm fade-up">
+    <div class="progress-bar mb-6">
+      <div class="progress-fill" style="width:33%"></div>
+    </div>
+    <p class="text-white/70 text-xs font-semibold mb-1 text-center">STEP 1 OF 3</p>
+    <h2 class="text-2xl font-black text-white text-center mb-2">How will you use<br/>Splugery?</h2>
+    <p class="text-white/70 text-sm text-center mb-6">You can always change this later</p>
+
+    <div class="space-y-3">
+      <button onclick="selectRole('buyer')" data-role="buyer"
+        class="role-btn w-full glass rounded-2xl p-4 text-left flex items-center gap-4 active:scale-95 transition-all">
+        <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl">🛍️</div>
+        <div class="flex-1">
+          <p class="text-white font-extrabold text-base">I'm a Buyer</p>
+          <p class="text-white/70 text-sm">Discover amazing fashion deals</p>
+        </div>
+        <div class="w-6 h-6 rounded-full border-2 border-white/40 role-check-buyer flex items-center justify-center"></div>
+      </button>
+
+      <button onclick="selectRole('seller')" data-role="seller"
+        class="role-btn w-full glass rounded-2xl p-4 text-left flex items-center gap-4 active:scale-95 transition-all">
+        <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl">🏷️</div>
+        <div class="flex-1">
+          <p class="text-white font-extrabold text-base">I'm a Seller</p>
+          <p class="text-white/70 text-sm">Reach thousands of buyers</p>
+        </div>
+        <div class="w-6 h-6 rounded-full border-2 border-white/40 role-check-seller flex items-center justify-center"></div>
+      </button>
+
+      <button onclick="selectRole('both')" data-role="both"
+        class="role-btn w-full glass rounded-2xl p-4 text-left flex items-center gap-4 active:scale-95 transition-all">
+        <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl">🌟</div>
+        <div class="flex-1">
+          <p class="text-white font-extrabold text-base">Both!</p>
+          <p class="text-white/70 text-sm">Buy and sell on the platform</p>
+        </div>
+        <div class="w-6 h-6 rounded-full border-2 border-white/40 role-check-both flex items-center justify-center"></div>
+      </button>
+    </div>
+
+    <button id="step2Next" onclick="goStep(3)" disabled
+      class="w-full mt-5 bg-white text-violet font-extrabold text-base py-4 rounded-2xl shadow-xl opacity-50 active:scale-95 transition-all">
+      Continue →
+    </button>
+  </div>
+
+  <!-- Step 3: Fashion Preference -->
+  <div data-step="3" class="w-full max-w-sm fade-up">
+    <div class="progress-bar mb-6">
+      <div class="progress-fill" style="width:66%"></div>
+    </div>
+    <p class="text-white/70 text-xs font-semibold mb-1 text-center">STEP 2 OF 3</p>
+    <h2 class="text-2xl font-black text-white text-center mb-2">What's your<br/>fashion vibe?</h2>
+    <p class="text-white/70 text-sm text-center mb-6">We'll personalise your feed</p>
+
+    <div class="space-y-3">
+      <button onclick="selectVibe('thrift')" data-vibe="thrift"
+        class="vibe-btn w-full glass rounded-2xl p-4 text-left flex items-center gap-4 active:scale-95 transition-all">
+        <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl">♻️</div>
+        <div class="flex-1">
+          <p class="text-white font-extrabold text-base">Thrift & Pre-loved</p>
+          <p class="text-white/70 text-sm">Sustainable fashion at great prices</p>
+        </div>
+        <div class="w-6 h-6 rounded-full border-2 border-white/40 vibe-check-thrift flex items-center justify-center"></div>
+      </button>
+
+      <button onclick="selectVibe('new')" data-vibe="new"
+        class="vibe-btn w-full glass rounded-2xl p-4 text-left flex items-center gap-4 active:scale-95 transition-all">
+        <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl">⭐</div>
+        <div class="flex-1">
+          <p class="text-white font-extrabold text-base">Brand New Items</p>
+          <p class="text-white/70 text-sm">Fresh drops from top creators</p>
+        </div>
+        <div class="w-6 h-6 rounded-full border-2 border-white/40 vibe-check-new flex items-center justify-center"></div>
+      </button>
+
+      <button onclick="selectVibe('both')" data-vibe="both"
+        class="vibe-btn w-full glass rounded-2xl p-4 text-left flex items-center gap-4 active:scale-95 transition-all">
+        <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl">💜</div>
+        <div class="flex-1">
+          <p class="text-white font-extrabold text-base">Show Me Everything</p>
+          <p class="text-white/70 text-sm">All styles, all vibes</p>
+        </div>
+        <div class="w-6 h-6 rounded-full border-2 border-white/40 vibe-check-both flex items-center justify-center"></div>
+      </button>
+    </div>
+
+    <button id="step3Next" onclick="goStep(4)" disabled
+      class="w-full mt-5 bg-white text-violet font-extrabold text-base py-4 rounded-2xl shadow-xl opacity-50 active:scale-95 transition-all">
+      Continue →
+    </button>
+  </div>
+
+  <!-- Step 4: Done -->
+  <div data-step="4" class="w-full max-w-sm text-center fade-up">
+    <div class="progress-bar mb-6">
+      <div class="progress-fill" style="width:100%"></div>
+    </div>
+    <div class="w-24 h-24 rounded-full glass flex items-center justify-center mx-auto mb-6 shadow-2xl">
+      <span class="text-5xl">🎉</span>
+    </div>
+    <h2 class="text-3xl font-black text-white mb-2">You're all set!</h2>
+    <p class="text-white/80 mb-3">Welcome to the Splugery community.</p>
+    <p class="text-white/60 text-sm mb-8">Your personalised fashion hub awaits.</p>
+
+    <button onclick="enterApp()" class="w-full bg-white text-violet font-extrabold text-lg py-4 rounded-2xl shadow-xl active:scale-95 transition-transform">
+      Enter Splugery 🚀
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     MAIN APP
+═══════════════════════════════════════════════ -->
+<div id="mainApp" class="hidden flex-col min-h-screen">
+
+  <!-- TOP NAVBAR -->
+  <header class="sticky top-0 z-50 bg-white/95 dark:bg-dark/95 backdrop-blur border-b border-neutral-100 dark:border-dark-border">
+    <div class="flex items-center gap-3 px-4 h-14">
+      <button onclick="showScreen('home')" class="font-black text-xl tracking-tight grad-text flex-shrink-0">SPLUGERY</button>
+      <div class="flex-1"></div>
+      <!-- Theme toggle -->
+      <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl bg-neutral-100 dark:bg-dark-card flex items-center justify-center" id="themeBtn">
+        <svg id="moonIcon" class="w-4 h-4 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        <svg id="sunIcon" class="w-4 h-4 text-yellow-500 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      </button>
+      <!-- Notifications -->
+      <button class="relative w-9 h-9 rounded-xl bg-neutral-100 dark:bg-dark-card flex items-center justify-center">
+        <svg class="w-4 h-4 text-neutral-600 dark:text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-coral"></span>
+      </button>
+      <!-- Avatar -->
+      <button onclick="showScreen('profile')" class="w-9 h-9 rounded-xl overflow-hidden border-2 border-violet/30 flex-shrink-0">
+        <img src="https://picsum.photos/seed/avatar42/36/36" alt="Me" class="w-full h-full object-cover" />
+      </button>
+    </div>
+  </header>
+
+  <!-- SCREENS CONTAINER -->
+  <div class="flex-1 pb-24">
+
+    <!-- ── HOME ── -->
+    <div data-screen="home" class="active">
+      <div class="max-w-screen-sm mx-auto">
+
+        <!-- Greeting + Wallet -->
+        <div class="px-4 pt-5 pb-4">
+          <p class="text-sm text-neutral-500 dark:text-neutral-400">Good morning 👋</p>
+          <h2 class="text-2xl font-black text-neutral-900 dark:text-white mb-4">Amara Okafor</h2>
+
+          <!-- Wallet card -->
+          <div class="grad rounded-3xl p-5 text-white relative overflow-hidden">
+            <div class="absolute -right-6 -top-6 w-32 h-32 rounded-full bg-white/10"></div>
+            <div class="absolute -right-2 bottom-2 w-20 h-20 rounded-full bg-white/5"></div>
+            <p class="text-white/80 text-xs font-semibold mb-1">WALLET BALANCE</p>
+            <p class="text-4xl font-black mb-3">₦47,250</p>
+            <div class="flex gap-3">
+              <button class="bg-white/20 text-white text-xs font-bold px-4 py-2 rounded-xl active:scale-95 transition-transform">+ Add Money</button>
+              <button class="bg-white/20 text-white text-xs font-bold px-4 py-2 rounded-xl active:scale-95 transition-transform">↑ Send</button>
+              <button class="bg-white/20 text-white text-xs font-bold px-4 py-2 rounded-xl active:scale-95 transition-transform">↓ Withdraw</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="flex gap-3 px-4 mb-5 overflow-x-auto no-scroll">
+          <div class="flex-shrink-0 bg-white dark:bg-dark-card card rounded-2xl px-4 py-3 text-center min-w-[90px]">
+            <p class="text-lg font-black grad-text">24</p>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Items Sold</p>
+          </div>
+          <div class="flex-shrink-0 bg-white dark:bg-dark-card card rounded-2xl px-4 py-3 text-center min-w-[90px]">
+            <p class="text-lg font-black grad-text">3</p>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Squads</p>
+          </div>
+          <div class="flex-shrink-0 bg-white dark:bg-dark-card card rounded-2xl px-4 py-3 text-center min-w-[90px]">
+            <p class="text-lg font-black grad-text">₦35k</p>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Portfolio</p>
+          </div>
+          <div class="flex-shrink-0 bg-white dark:bg-dark-card card rounded-2xl px-4 py-3 text-center min-w-[90px]">
+            <p class="text-lg font-black grad-text">92</p>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Style Score</p>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="px-4 mb-5">
+          <h3 class="font-black text-base mb-3">Quick Actions</h3>
+          <div class="grid grid-cols-4 gap-3">
+            <button onclick="showScreen('marketplace')" class="flex flex-col items-center gap-2">
+              <div class="w-14 h-14 rounded-2xl grad flex items-center justify-center shadow-lg shadow-violet/20">
+                <span class="text-2xl">🛍️</span>
+              </div>
+              <span class="text-xs font-semibold text-neutral-700 dark:text-neutral-300">Shop</span>
+            </button>
+            <button onclick="showScreen('squads')" class="flex flex-col items-center gap-2">
+              <div class="w-14 h-14 rounded-2xl grad-gold flex items-center justify-center shadow-lg shadow-gold/20">
+                <span class="text-2xl">👥</span>
+              </div>
+              <span class="text-xs font-semibold text-neutral-700 dark:text-neutral-300">Squads</span>
+            </button>
+            <button onclick="showScreen('invest')" class="flex flex-col items-center gap-2">
+              <div class="w-14 h-14 rounded-2xl bg-teal-500 flex items-center justify-center shadow-lg shadow-teal-500/20">
+                <span class="text-2xl">📈</span>
+              </div>
+              <span class="text-xs font-semibold text-neutral-700 dark:text-neutral-300">Invest</span>
+            </button>
+            <button class="flex flex-col items-center gap-2">
+              <div class="w-14 h-14 rounded-2xl bg-pink-500 flex items-center justify-center shadow-lg shadow-pink-500/20">
+                <span class="text-2xl">🎁</span>
+              </div>
+              <span class="text-xs font-semibold text-neutral-700 dark:text-neutral-300">Rewards</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Trending Products -->
+        <div class="mb-5">
+          <div class="flex items-center justify-between px-4 mb-3">
+            <h3 class="font-black text-base">🔥 Trending Now</h3>
+            <button onclick="showScreen('marketplace')" class="text-xs font-bold text-violet dark:text-violet-light">See all</button>
+          </div>
+          <div class="flex gap-3 overflow-x-auto no-scroll px-4" id="trendingProducts"></div>
+        </div>
+
+        <!-- Style Squads mini -->
+        <div class="px-4 mb-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-black text-base">👥 Your Squads</h3>
+            <button onclick="showScreen('squads')" class="text-xs font-bold text-violet dark:text-violet-light">See all</button>
+          </div>
+          <div class="space-y-3" id="homeSquads"></div>
+        </div>
+
+        <!-- Investment CTA -->
+        <div class="px-4 mb-5">
+          <div class="grad rounded-3xl p-5 flex items-center justify-between">
+            <div>
+              <p class="text-white font-black text-base mb-1">Fashion ROI? 📈</p>
+              <p class="text-white/80 text-sm">Your portfolio grew 12% this month</p>
+            </div>
+            <button onclick="showScreen('invest')" class="bg-white text-violet font-extrabold text-sm px-4 py-2.5 rounded-xl flex-shrink-0 active:scale-95 transition-transform">
+              View
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── MARKETPLACE ── -->
+    <div data-screen="marketplace">
+      <!-- Sticky filters -->
+      <div class="sticky top-14 z-40 bg-white/95 dark:bg-dark/95 backdrop-blur border-b border-neutral-100 dark:border-dark-border">
+        <!-- Search -->
+        <div class="px-4 pt-3 pb-2">
+          <div class="flex items-center gap-2 bg-neutral-100 dark:bg-dark-card rounded-xl px-3 py-2.5">
+            <svg class="w-4 h-4 text-neutral-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input id="marketSearch" type="text" oninput="renderMarket()" placeholder="Search styles, brands..."
+              class="flex-1 bg-transparent text-sm outline-none text-neutral-700 dark:text-neutral-300 placeholder:text-neutral-400" />
+          </div>
+        </div>
+        <!-- Condition filter -->
+        <div class="px-4 pb-2 flex gap-2">
+          <button onclick="setFilter('all')" data-filter="all" class="filter-btn px-4 py-1.5 rounded-xl text-sm font-extrabold transition-all grad text-white">✨ All</button>
+          <button onclick="setFilter('thrift')" data-filter="thrift" class="filter-btn px-4 py-1.5 rounded-xl text-sm font-extrabold transition-all bg-neutral-100 dark:bg-dark-card text-neutral-600 dark:text-neutral-400">♻️ Thrift</button>
+          <button onclick="setFilter('new')" data-filter="new" class="filter-btn px-4 py-1.5 rounded-xl text-sm font-extrabold transition-all bg-neutral-100 dark:bg-dark-card text-neutral-600 dark:text-neutral-400">⭐ New</button>
+          <div class="ml-auto flex gap-1.5">
+            <button onclick="toggleLayout()" id="layoutBtn" class="p-2 rounded-xl bg-neutral-100 dark:bg-dark-card text-neutral-600 dark:text-neutral-400">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+            </button>
+          </div>
+        </div>
+        <!-- Categories -->
+        <div class="flex gap-2 overflow-x-auto no-scroll px-4 pb-3" id="categoryBar"></div>
+      </div>
+
+      <div class="max-w-screen-sm mx-auto px-4 pt-4">
+        <p id="marketCount" class="text-sm text-neutral-500 dark:text-neutral-400 mb-4"></p>
+        <div id="marketGrid" class="grid grid-cols-2 gap-3"></div>
+      </div>
+    </div>
+
+    <!-- ── STYLE SQUADS ── -->
+    <div data-screen="squads">
+      <div class="max-w-screen-sm mx-auto">
+        <!-- Header -->
+        <div class="grad px-4 pt-6 pb-8">
+          <h2 class="text-2xl font-black text-white mb-1">Style Squads 👥</h2>
+          <p class="text-white/80 text-sm">Save together. Slay together. Win together.</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="px-4 -mt-4 mb-4">
+          <div class="flex gap-1 bg-white dark:bg-dark-card rounded-2xl p-1 card">
+            <button onclick="squadTab('my')" id="tabMySquads" class="flex-1 py-2 rounded-xl text-xs font-extrabold transition-all bg-violet text-white shadow-sm">My Squads</button>
+            <button onclick="squadTab('discover')" id="tabDiscover" class="flex-1 py-2 rounded-xl text-xs font-extrabold transition-all text-neutral-500 dark:text-neutral-400">Discover</button>
+          </div>
+        </div>
+
+        <div class="px-4 space-y-4" id="squadsContainer"></div>
+
+        <!-- Create CTA -->
+        <div class="px-4 mt-4 mb-4">
+          <div class="rounded-2xl border-2 border-dashed border-violet/30 dark:border-violet/20 p-5 text-center">
+            <p class="text-3xl mb-2">✨</p>
+            <p class="font-black text-base text-neutral-800 dark:text-white mb-1">Start Your Squad</p>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-3">Create a savings circle with friends</p>
+            <button class="grad text-white font-bold text-sm px-6 py-2.5 rounded-xl active:scale-95 transition-transform">Create Squad</button>
+          </div>
+        </div>
+
+        <!-- How it works -->
+        <div class="px-4 mb-6">
+          <h3 class="font-black text-base mb-3">How It Works</h3>
+          <div class="space-y-3">
+            <div class="flex items-start gap-3 bg-white dark:bg-dark-card rounded-2xl p-4 card">
+              <div class="w-8 h-8 rounded-xl grad flex items-center justify-center text-white font-black text-sm flex-shrink-0">1</div>
+              <div>
+                <p class="font-bold text-sm">Create or Join a Squad</p>
+                <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Gather your fashion crew — 3 to 20 members</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3 bg-white dark:bg-dark-card rounded-2xl p-4 card">
+              <div class="w-8 h-8 rounded-xl grad flex items-center justify-center text-white font-black text-sm flex-shrink-0">2</div>
+              <div>
+                <p class="font-bold text-sm">Contribute Weekly</p>
+                <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Each member adds their agreed amount</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3 bg-white dark:bg-dark-card rounded-2xl p-4 card">
+              <div class="w-8 h-8 rounded-xl grad flex items-center justify-center text-white font-black text-sm flex-shrink-0">3</div>
+              <div>
+                <p class="font-bold text-sm">Shop Together &amp; Win</p>
+                <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Unlock group discounts and exclusive drops</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── INVESTMENT CLUBS ── -->
+    <div data-screen="invest">
+      <div class="max-w-screen-sm mx-auto">
+        <!-- Portfolio banner -->
+        <div class="grad px-4 pt-6 pb-10">
+          <p class="text-white/70 text-xs font-semibold mb-1">PORTFOLIO VALUE</p>
+          <p class="text-4xl font-black text-white mb-1">₦35,200</p>
+          <div class="flex items-center gap-2">
+            <span class="text-white/80 text-sm">+12.4%</span>
+            <span class="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full font-semibold">This Month</span>
+          </div>
+        </div>
+
+        <!-- Tab -->
+        <div class="px-4 -mt-5 mb-4">
+          <div class="flex gap-1 bg-white dark:bg-dark-card rounded-2xl p-1 card">
+            <button onclick="investTab('clubs')" id="tabClubs" class="flex-1 py-2 rounded-xl text-xs font-extrabold transition-all bg-violet text-white shadow-sm">Investment Clubs</button>
+            <button onclick="investTab('portfolio')" id="tabPortfolio" class="flex-1 py-2 rounded-xl text-xs font-extrabold transition-all text-neutral-500 dark:text-neutral-400">My Portfolio</button>
+          </div>
+        </div>
+
+        <div class="px-4 space-y-4" id="investContainer"></div>
+
+        <div class="px-4 mt-4 mb-6" id="portfolioContainer" style="display:none">
+          <div class="bg-white dark:bg-dark-card rounded-3xl p-5 card">
+            <h3 class="font-black text-base mb-4">Active Investments</h3>
+            <div class="space-y-3" id="portfolioList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Invest Modal -->
+      <div class="modal-overlay" id="investModal">
+        <div class="modal-sheet">
+          <div class="w-10 h-1 rounded-full bg-neutral-200 dark:bg-dark-border mx-auto mb-5"></div>
+          <h3 class="font-black text-lg mb-1" id="modalClubName">Invest in Club</h3>
+          <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-5" id="modalClubDesc">Projected 18% annual return</p>
+          <div class="space-y-3 mb-5">
+            <div>
+              <p class="text-xs font-semibold text-neutral-500 mb-1.5">Investment Amount</p>
+              <div class="flex gap-2">
+                <button onclick="setAmount(5000)" class="amount-btn flex-1 py-2 rounded-xl border-2 border-neutral-100 dark:border-dark-border text-sm font-bold text-neutral-700 dark:text-neutral-300 active:scale-95 transition-all">₦5k</button>
+                <button onclick="setAmount(10000)" class="amount-btn flex-1 py-2 rounded-xl border-2 border-neutral-100 dark:border-dark-border text-sm font-bold text-neutral-700 dark:text-neutral-300 active:scale-95 transition-all">₦10k</button>
+                <button onclick="setAmount(25000)" class="amount-btn flex-1 py-2 rounded-xl border-2 border-neutral-100 dark:border-dark-border text-sm font-bold text-neutral-700 dark:text-neutral-300 active:scale-95 transition-all">₦25k</button>
+                <button onclick="setAmount(50000)" class="amount-btn flex-1 py-2 rounded-xl border-2 border-neutral-100 dark:border-dark-border text-sm font-bold text-neutral-700 dark:text-neutral-300 active:scale-95 transition-all">₦50k</button>
+              </div>
+            </div>
+            <input id="amountInput" type="number" placeholder="Or enter custom amount (₦)"
+              class="w-full bg-neutral-100 dark:bg-dark-border rounded-xl px-4 py-3 text-sm outline-none text-neutral-700 dark:text-neutral-300" />
+          </div>
+          <button onclick="confirmInvest()" class="w-full grad text-white font-extrabold py-4 rounded-2xl active:scale-95 transition-transform">
+            Invest Now 🚀
+          </button>
+          <button onclick="closeModal()" class="w-full text-neutral-400 text-sm mt-3 py-2">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PROFILE ── -->
+    <div data-screen="profile">
+      <div class="max-w-screen-sm mx-auto">
+        <!-- Profile header card -->
+        <div class="px-4 pt-5">
+          <div class="bg-white dark:bg-dark-card rounded-3xl p-5 card">
+            <div class="flex items-start gap-4 mb-4">
+              <div class="relative">
+                <div class="w-20 h-20 rounded-2xl overflow-hidden border-2 border-violet/30">
+                  <img src="https://picsum.photos/seed/myavatar/80/80" alt="Profile" class="w-full h-full object-cover" />
+                </div>
+                <button class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full grad flex items-center justify-center shadow-md">
+                  <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </button>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-0.5">
+                  <h2 class="font-black text-lg">Amara Okafor</h2>
+                  <svg class="w-4 h-4 text-violet" fill="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                </div>
+                <p class="text-sm text-neutral-500 dark:text-neutral-400">@amara_style</p>
+                <div class="flex gap-0.5 mt-1.5">
+                  <span class="text-gold text-xs">★★★★★</span>
+                  <span class="text-xs text-neutral-400 ml-1">(47 reviews)</span>
+                </div>
+              </div>
+              <button onclick="toggleBioEdit()" class="p-2 rounded-xl bg-neutral-100 dark:bg-dark-border">
+                <svg class="w-4 h-4 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+              </button>
+            </div>
+
+            <!-- Bio -->
+            <div id="bioDisplay">
+              <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-4 leading-relaxed">Lagos-based fashion lover. Thrift queen. Style is my superpower. 💜</p>
+            </div>
+            <div id="bioEdit" class="mb-4 hidden">
+              <textarea id="bioText" rows="3" class="w-full bg-neutral-100 dark:bg-dark-border rounded-xl px-3 py-2 text-sm outline-none resize-none text-neutral-700 dark:text-neutral-300">Lagos-based fashion lover. Thrift queen. Style is my superpower. 💜</textarea>
+              <button onclick="saveBio()" class="mt-2 grad text-white text-xs font-bold px-4 py-1.5 rounded-xl">Save</button>
+            </div>
+
+            <!-- Stats -->
+            <div class="flex items-center divide-x divide-neutral-100 dark:divide-dark-border border border-neutral-100 dark:border-dark-border rounded-2xl py-3">
+              <div class="flex-1 text-center">
+                <p class="font-black text-xl grad-text">24</p>
+                <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">Sold</p>
+              </div>
+              <div class="flex-1 text-center">
+                <p class="font-black text-xl grad-text">3</p>
+                <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">Squads</p>
+              </div>
+              <div class="flex-1 text-center">
+                <p class="font-black text-xl grad-text">₦35k</p>
+                <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">Portfolio</p>
+              </div>
+              <div class="flex-1 text-center">
+                <p class="font-black text-xl grad-text">92</p>
+                <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">Score</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seller CTA -->
+        <div class="px-4 mt-4">
+          <div class="rounded-2xl bg-gradient-to-r from-coral/10 to-gold/10 dark:from-coral/20 dark:to-gold/20 border border-coral/20 dark:border-coral/30 p-4 flex items-center justify-between">
+            <div>
+              <p class="font-black text-sm">Ready to sell? 🏷️</p>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400">List your first item in 60 seconds</p>
+            </div>
+            <button class="bg-coral text-white font-bold text-xs px-4 py-2 rounded-xl active:scale-95 transition-transform">+ List</button>
+          </div>
+        </div>
+
+        <!-- Profile Tabs -->
+        <div class="px-4 mt-4">
+          <div class="flex gap-1 bg-neutral-100 dark:bg-dark-card rounded-2xl p-1">
+            <button onclick="profileTab('purchases')" id="ptab-purchases" class="flex-1 py-2 rounded-xl text-xs font-extrabold transition-all bg-white dark:bg-dark-border text-violet dark:text-violet-light shadow-sm">🛍️ Purchases</button>
+            <button onclick="profileTab('listings')" id="ptab-listings" class="flex-1 py-2 rounded-xl text-xs font-extrabold transition-all text-neutral-500 dark:text-neutral-400">🏷️ Listings</button>
+            <button onclick="profileTab('wishlist')" id="ptab-wishlist" class="flex-1 py-2 rounded-xl text-xs font-extrabold transition-all text-neutral-500 dark:text-neutral-400">❤️ Wishlist</button>
+          </div>
+        </div>
+
+        <div class="px-4 mt-4" id="profileTabContent"></div>
+
+        <!-- Settings -->
+        <div class="px-4 mt-5 space-y-4 pb-6">
+          <!-- Account group -->
+          <div class="bg-white dark:bg-dark-card rounded-2xl overflow-hidden card">
+            <p class="text-xs font-semibold text-neutral-400 uppercase tracking-wider px-4 pt-3 pb-1">Account</p>
+            <button class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-neutral-50 dark:hover:bg-dark-border/50 border-b border-neutral-50 dark:border-dark-border/50">
+              <div class="w-8 h-8 rounded-xl bg-violet/10 flex items-center justify-center">
+                <svg class="w-4 h-4 text-violet" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              </div>
+              <span class="flex-1 text-sm font-medium text-left text-neutral-700 dark:text-neutral-300">Edit Profile</span>
+              <svg class="w-4 h-4 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
+            <button class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-neutral-50 dark:hover:bg-dark-border/50 border-b border-neutral-50 dark:border-dark-border/50">
+              <div class="w-8 h-8 rounded-xl bg-violet/10 flex items-center justify-center">
+                <svg class="w-4 h-4 text-violet" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+              </div>
+              <span class="flex-1 text-sm font-medium text-left text-neutral-700 dark:text-neutral-300">Notifications</span>
+              <span class="text-xs font-bold px-2 py-0.5 rounded-full grad text-white">3</span>
+            </button>
+            <button class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-neutral-50 dark:hover:bg-dark-border/50">
+              <div class="w-8 h-8 rounded-xl bg-violet/10 flex items-center justify-center">
+                <svg class="w-4 h-4 text-violet" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              </div>
+              <span class="flex-1 text-sm font-medium text-left text-neutral-700 dark:text-neutral-300">Verification & Trust</span>
+              <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-600">Verified</span>
+            </button>
+          </div>
+
+          <!-- Preferences group -->
+          <div class="bg-white dark:bg-dark-card rounded-2xl overflow-hidden card">
+            <p class="text-xs font-semibold text-neutral-400 uppercase tracking-wider px-4 pt-3 pb-1">Preferences</p>
+            <button onclick="toggleTheme()" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-neutral-50 dark:hover:bg-dark-border/50 border-b border-neutral-50 dark:border-dark-border/50">
+              <div class="w-8 h-8 rounded-xl bg-violet/10 flex items-center justify-center">
+                <svg class="w-4 h-4 text-violet" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+              </div>
+              <span class="flex-1 text-sm font-medium text-left text-neutral-700 dark:text-neutral-300" id="themeMenuLabel">Switch to Dark Mode</span>
+              <svg class="w-4 h-4 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
+            <button class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-neutral-50 dark:hover:bg-dark-border/50">
+              <div class="w-8 h-8 rounded-xl bg-violet/10 flex items-center justify-center">
+                <svg class="w-4 h-4 text-violet" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              </div>
+              <span class="flex-1 text-sm font-medium text-left text-neutral-700 dark:text-neutral-300">App Settings</span>
+              <svg class="w-4 h-4 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+
+          <!-- Support group -->
+          <div class="bg-white dark:bg-dark-card rounded-2xl overflow-hidden card">
+            <p class="text-xs font-semibold text-neutral-400 uppercase tracking-wider px-4 pt-3 pb-1">Support</p>
+            <button class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-neutral-50 dark:hover:bg-dark-border/50 border-b border-neutral-50 dark:border-dark-border/50">
+              <div class="w-8 h-8 rounded-xl bg-violet/10 flex items-center justify-center">
+                <svg class="w-4 h-4 text-violet" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <span class="flex-1 text-sm font-medium text-left text-neutral-700 dark:text-neutral-300">Help Centre</span>
+              <svg class="w-4 h-4 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
+            <button onclick="signOut()" class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-red-50 dark:hover:bg-red-900/20">
+              <div class="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+                <svg class="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+              </div>
+              <span class="flex-1 text-sm font-semibold text-left text-red-500">Sign Out</span>
+            </button>
+          </div>
+
+          <p class="text-center text-xs text-neutral-300 dark:text-neutral-600 pb-2">Splugery v1.0.0 • Made with 💜 in Lagos</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end screens container -->
+
+  <!-- BOTTOM NAV -->
+  <nav class="fixed bottom-0 inset-x-0 z-50 bg-white/95 dark:bg-dark/95 backdrop-blur border-t border-neutral-100 dark:border-dark-border safe-area-pb">
+    <div class="flex items-center justify-around h-16 max-w-screen-sm mx-auto px-2">
+
+      <button onclick="showScreen('home')" class="nav-item nav-active flex flex-col items-center gap-1 py-1 px-3" id="nav-home">
+        <div class="nav-icon-wrap w-9 h-9 rounded-xl grad flex items-center justify-center">
+          <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        </div>
+        <span class="text-[10px] font-bold text-violet">Home</span>
+      </button>
+
+      <button onclick="showScreen('marketplace')" class="nav-item flex flex-col items-center gap-1 py-1 px-3" id="nav-marketplace">
+        <div class="nav-icon-wrap w-9 h-9 rounded-xl bg-neutral-100 dark:bg-dark-card flex items-center justify-center">
+          <svg class="w-4 h-4 text-neutral-500 dark:text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+        </div>
+        <span class="text-[10px] font-bold text-neutral-500 dark:text-neutral-400">Market</span>
+      </button>
+
+      <button onclick="showScreen('squads')" class="nav-item flex flex-col items-center gap-1 py-1 px-3" id="nav-squads">
+        <div class="nav-icon-wrap w-9 h-9 rounded-xl bg-neutral-100 dark:bg-dark-card flex items-center justify-center">
+          <svg class="w-4 h-4 text-neutral-500 dark:text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+        <span class="text-[10px] font-bold text-neutral-500 dark:text-neutral-400">Squads</span>
+      </button>
+
+      <button onclick="showScreen('invest')" class="nav-item flex flex-col items-center gap-1 py-1 px-3" id="nav-invest">
+        <div class="nav-icon-wrap w-9 h-9 rounded-xl bg-neutral-100 dark:bg-dark-card flex items-center justify-center">
+          <svg class="w-4 h-4 text-neutral-500 dark:text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+        </div>
+        <span class="text-[10px] font-bold text-neutral-500 dark:text-neutral-400">Invest</span>
+      </button>
+
+      <button onclick="showScreen('profile')" class="nav-item flex flex-col items-center gap-1 py-1 px-3" id="nav-profile">
+        <div class="nav-icon-wrap w-9 h-9 rounded-xl bg-neutral-100 dark:bg-dark-card flex items-center justify-center">
+          <svg class="w-4 h-4 text-neutral-500 dark:text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        </div>
+        <span class="text-[10px] font-bold text-neutral-500 dark:text-neutral-400">Profile</span>
+      </button>
+
+    </div>
+  </nav>
+
+</div><!-- end mainApp -->
+
+<script>
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+const products = [
+  { id:1, title:'Ankara Wrap Dress', brand:'Adire Lagos', price:12500, oldPrice:18000, condition:'thrift', category:'dresses', image:'https://picsum.photos/seed/prod1/300/380', liked:true, rating:4.8, reviews:23, seller:'@adire_lagos', verified:true },
+  { id:2, title:'Aso-Oke Blazer', brand:'Kente House', price:35000, oldPrice:null, condition:'new', category:'tops', image:'https://picsum.photos/seed/prod2/300/380', liked:false, rating:4.9, reviews:41, seller:'@kente_house', verified:true },
+  { id:3, title:'Afropunk Denim Set', brand:'Lagos Street', price:8900, oldPrice:15000, condition:'thrift', category:'sets', image:'https://picsum.photos/seed/prod3/300/380', liked:true, rating:4.6, reviews:17, seller:'@lagosstreet', verified:false },
+  { id:4, title:'Batik Mini Skirt', brand:'Eko Couture', price:6500, oldPrice:null, condition:'new', category:'skirts', image:'https://picsum.photos/seed/prod4/300/380', liked:false, rating:4.7, reviews:8, seller:'@eko_couture', verified:true },
+  { id:5, title:'Vintage Kente Jacket', brand:'Accra Threads', price:22000, oldPrice:40000, condition:'thrift', category:'tops', image:'https://picsum.photos/seed/prod5/300/380', liked:false, rating:4.5, reviews:31, seller:'@accra_threads', verified:true },
+  { id:6, title:'Dashiki Print Shirt', brand:'Naija Drip', price:4500, oldPrice:null, condition:'new', category:'tops', image:'https://picsum.photos/seed/prod6/300/380', liked:true, rating:4.4, reviews:12, seller:'@naija_drip', verified:false },
+  { id:7, title:'Boubou Maxi Dress', brand:'Sahel Style', price:18000, oldPrice:28000, condition:'thrift', category:'dresses', image:'https://picsum.photos/seed/prod7/300/380', liked:false, rating:4.8, reviews:56, seller:'@sahel_style', verified:true },
+  { id:8, title:'Agbada Slim Set', brand:'Abuja Luxe', price:55000, oldPrice:null, condition:'new', category:'sets', image:'https://picsum.photos/seed/prod8/300/380', liked:false, rating:5.0, reviews:7, seller:'@abuja_luxe', verified:true },
+];
+
+const categories = [
+  { id:'all', emoji:'✨', label:'All' },
+  { id:'dresses', emoji:'👗', label:'Dresses' },
+  { id:'tops', emoji:'👕', label:'Tops' },
+  { id:'sets', emoji:'🤝', label:'Sets' },
+  { id:'skirts', emoji:'🌺', label:'Skirts' },
+  { id:'bags', emoji:'👜', label:'Bags' },
+  { id:'shoes', emoji:'👟', label:'Shoes' },
+];
+
+const squads = [
+  { id:1, name:'Lagos Glam Crew', emoji:'💃', members:8, target:150000, saved:87500, weekly:5000, joined:true, theme:'from-violet to-purple-900' },
+  { id:2, name:'Thrift Queens', emoji:'♻️', members:5, target:80000, saved:45200, weekly:3000, joined:true, theme:'from-coral to-orange-700' },
+  { id:3, name:'Ankara Addicts', emoji:'🧶', members:12, target:200000, saved:92000, weekly:8000, joined:false, theme:'from-teal-500 to-teal-900' },
+  { id:4, name:'CEO Drip Gang', emoji:'💼', members:6, target:120000, saved:18000, weekly:4000, joined:false, theme:'from-yellow-500 to-orange-600' },
+];
+
+const clubs = [
+  { id:1, name:'Lagos Fashion Fund', emoji:'👗', desc:'Invest in emerging Nigerian designers', raised:4200000, target:6000000, roi:18, investors:124, minInvest:5000, tag:'Trending 🔥' },
+  { id:2, name:'Thrift Empire', emoji:'♻️', desc:'Bulk thrift import & resale network', raised:1850000, target:3000000, roi:24, investors:67, minInvest:10000, tag:'High ROI' },
+  { id:3, name:'Sneaker Vault', emoji:'👟', desc:'Limited edition sneaker investment pool', raised:2900000, target:5000000, roi:31, investors:89, minInvest:25000, tag:'Members Only' },
+  { id:4, name:'Ankara Index', emoji:'🧶', desc:'Track & trade African fabric futures', raised:780000, target:2000000, roi:15, investors:43, minInvest:3000, tag:'New' },
+];
+
+const myInvestments = [
+  { name:'Lagos Fashion Fund', amount:25000, currentValue:27850, roi:11.4 },
+  { name:'Thrift Empire', amount:10000, currentValue:11380, roi:13.8 },
+];
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let currentStep = 1;
+let selectedRole = null;
+let selectedVibe = null;
+let currentScreen = 'home';
+let marketFilter = 'all';
+let marketCategory = 'all';
+let marketLayout = 'grid';
+let squadTabState = 'my';
+let investTabState = 'clubs';
+let profileTabState = 'purchases';
+let likedIds = new Set(products.filter(p => p.liked).map(p => p.id));
+let isDark = false;
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  // Check if already onboarded
+  if (localStorage.getItem('splugery-onboarded')) {
+    document.getElementById('onboarding').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'flex';
+    initApp();
+  }
+  // Check saved theme
+  if (localStorage.getItem('splugery-theme') === 'dark') {
+    applyDark(true);
+  }
+});
+
+function initApp() {
+  renderTrending();
+  renderHomeSquads();
+  renderMarket();
+  renderCategoryBar();
+  renderSquads();
+  renderInvest();
+  renderProfileTab('purchases');
+}
+
+// ══════════════════════════════════════════
+// ONBOARDING
+// ══════════════════════════════════════════
+function goStep(n) {
+  document.querySelector('[data-step="' + currentStep + '"]').classList.remove('active');
+  currentStep = n;
+  const el = document.querySelector('[data-step="' + n + '"]');
+  el.classList.add('active');
+  el.classList.remove('fade-up');
+  void el.offsetWidth;
+  el.classList.add('fade-up');
+}
+
+function selectRole(role) {
+  selectedRole = role;
+  ['buyer','seller','both'].forEach(r => {
+    const check = document.querySelector('.role-check-' + r);
+    if (check) {
+      check.innerHTML = r === role ? '<svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>' : '';
+      check.style.background = r === role ? '#7C3AED' : '';
+      check.style.borderColor = r === role ? '#7C3AED' : '';
+    }
+    const btn = document.querySelector('[data-role="' + r + '"]');
+    if (btn) btn.style.borderColor = r === role ? 'white' : '';
+  });
+  const next = document.getElementById('step2Next');
+  if (next) { next.disabled = false; next.classList.remove('opacity-50'); }
+}
+
+function selectVibe(vibe) {
+  selectedVibe = vibe;
+  ['thrift','new','both'].forEach(v => {
+    const check = document.querySelector('.vibe-check-' + v);
+    if (check) {
+      check.innerHTML = v === vibe ? '<svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>' : '';
+      check.style.background = v === vibe ? '#7C3AED' : '';
+    }
+  });
+  const next = document.getElementById('step3Next');
+  if (next) { next.disabled = false; next.classList.remove('opacity-50'); }
+}
+
+function skipOnboarding() {
+  localStorage.setItem('splugery-onboarded', '1');
+  document.getElementById('onboarding').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'flex';
+  initApp();
+}
+
+function enterApp() {
+  localStorage.setItem('splugery-onboarded', '1');
+  if (selectedRole) localStorage.setItem('splugery-role', selectedRole);
+  if (selectedVibe) localStorage.setItem('splugery-vibe', selectedVibe);
+  document.getElementById('onboarding').style.display = 'none';
+  const app = document.getElementById('mainApp');
+  app.style.display = 'flex';
+  app.classList.add('fade-in');
+  initApp();
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function showScreen(name) {
+  // Hide all screens
+  document.querySelectorAll('[data-screen]').forEach(s => s.classList.remove('active'));
+  // Show target
+  const target = document.querySelector('[data-screen="' + name + '"]');
+  if (target) {
+    target.classList.add('active');
+    target.classList.remove('fade-up');
+    void target.offsetWidth;
+    target.classList.add('fade-up');
+  }
+  // Update nav
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.remove('nav-active');
+    const iconWrap = n.querySelector('.nav-icon-wrap');
+    if (iconWrap) {
+      iconWrap.classList.remove('grad');
+      iconWrap.classList.add('bg-neutral-100','dark:bg-dark-card');
+      const svg = iconWrap.querySelector('svg');
+      if (svg) { svg.classList.remove('text-white'); svg.classList.add('text-neutral-500','dark:text-neutral-400'); }
+    }
+    const span = n.querySelector('span');
+    if (span) { span.classList.remove('text-violet','dark:text-violet-light'); span.classList.add('text-neutral-500','dark:text-neutral-400'); }
+  });
+  const activeNav = document.getElementById('nav-' + name);
+  if (activeNav) {
+    activeNav.classList.add('nav-active');
+    const iconWrap = activeNav.querySelector('.nav-icon-wrap');
+    if (iconWrap) {
+      iconWrap.classList.add('grad');
+      iconWrap.classList.remove('bg-neutral-100','dark:bg-dark-card');
+      const svg = iconWrap.querySelector('svg');
+      if (svg) { svg.classList.add('text-white'); svg.classList.remove('text-neutral-500','dark:text-neutral-400'); }
+    }
+    const span = activeNav.querySelector('span');
+    if (span) { span.classList.add('text-violet'); span.classList.remove('text-neutral-500','dark:text-neutral-400'); }
+  }
+  currentScreen = name;
+  window.scrollTo(0,0);
+}
+
+// ══════════════════════════════════════════
+// THEME
+// ══════════════════════════════════════════
+function applyDark(dark) {
+  isDark = dark;
+  if (dark) {
+    document.documentElement.classList.add('dark');
+    document.getElementById('moonIcon').classList.add('hidden');
+    document.getElementById('sunIcon').classList.remove('hidden');
+  } else {
+    document.documentElement.classList.remove('dark');
+    document.getElementById('moonIcon').classList.remove('hidden');
+    document.getElementById('sunIcon').classList.add('hidden');
+  }
+  const label = document.getElementById('themeMenuLabel');
+  if (label) label.textContent = dark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+}
+
+function toggleTheme() {
+  const newDark = !isDark;
+  applyDark(newDark);
+  localStorage.setItem('splugery-theme', newDark ? 'dark' : 'light');
+}
+
+// ══════════════════════════════════════════
+// MARKETPLACE
+// ══════════════════════════════════════════
+function setFilter(f) {
+  marketFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    const isActive = btn.dataset.filter === f;
+    if (isActive) {
+      btn.classList.add('grad','text-white');
+      btn.classList.remove('bg-neutral-100','dark:bg-dark-card','text-neutral-600','dark:text-neutral-400');
+    } else {
+      btn.classList.remove('grad','text-white');
+      btn.classList.add('bg-neutral-100','dark:bg-dark-card','text-neutral-600','dark:text-neutral-400');
+    }
+  });
+  renderMarket();
+}
+
+function setCategoryFilter(catId) {
+  marketCategory = catId;
+  renderCategoryBar();
+  renderMarket();
+}
+
+function toggleLayout() {
+  marketLayout = marketLayout === 'grid' ? 'list' : 'grid';
+  renderMarket();
+}
+
+function renderCategoryBar() {
+  const bar = document.getElementById('categoryBar');
+  if (!bar) return;
+  bar.innerHTML = categories.map(cat => `
+    <button onclick="setCategoryFilter('${cat.id}')" class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+      marketCategory === cat.id
+        ? 'bg-violet text-white shadow-sm'
+        : 'bg-neutral-100 dark:bg-dark-card text-neutral-600 dark:text-neutral-400'
+    }">
+      <span>${cat.emoji}</span><span>${cat.label}</span>
+    </button>
+  `).join('');
+}
+
+function renderMarket() {
+  const search = (document.getElementById('marketSearch') || {}).value || '';
+  let items = products.filter(p => {
+    const mc = marketFilter === 'all' || p.condition === marketFilter;
+    const mcat = marketCategory === 'all' || p.category === marketCategory;
+    const ms = !search || p.title.toLowerCase().includes(search.toLowerCase()) || p.brand.toLowerCase().includes(search.toLowerCase());
+    return mc && mcat && ms;
+  });
+
+  const count = document.getElementById('marketCount');
+  if (count) count.textContent = items.length + ' items found';
+
+  const grid = document.getElementById('marketGrid');
+  if (!grid) return;
+
+  if (items.length === 0) {
+    grid.className = '';
+    grid.innerHTML = `
+      <div class="col-span-2 text-center py-20">
+        <p class="text-4xl mb-3">🔍</p>
+        <p class="font-black text-lg text-neutral-700 dark:text-neutral-300">No items found</p>
+        <p class="text-sm text-neutral-400 mt-1">Try different filters</p>
+        <button onclick="clearMarketFilters()" class="mt-4 border-2 border-neutral-200 dark:border-dark-border text-sm font-bold px-4 py-2 rounded-xl text-neutral-600 dark:text-neutral-400 active:scale-95 transition-transform">Clear filters</button>
+      </div>`;
+    return;
+  }
+
+  if (marketLayout === 'grid') {
+    grid.className = 'grid grid-cols-2 gap-3';
+    grid.innerHTML = items.map(p => productCardGrid(p)).join('');
+  } else {
+    grid.className = 'flex flex-col gap-3';
+    grid.innerHTML = items.map(p => productCardList(p)).join('');
+  }
+}
+
+function clearMarketFilters() {
+  marketFilter = 'all';
+  marketCategory = 'all';
+  document.getElementById('marketSearch').value = '';
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    if (btn.dataset.filter === 'all') {
+      btn.classList.add('grad','text-white');
+      btn.classList.remove('bg-neutral-100','dark:bg-dark-card','text-neutral-600','dark:text-neutral-400');
+    } else {
+      btn.classList.remove('grad','text-white');
+      btn.classList.add('bg-neutral-100','dark:bg-dark-card','text-neutral-600','dark:text-neutral-400');
+    }
+  });
+  renderCategoryBar();
+  renderMarket();
+}
+
+function productCardGrid(p) {
+  const disc = p.oldPrice ? Math.round((1 - p.price/p.oldPrice)*100) : 0;
+  const liked = likedIds.has(p.id);
+  return `
+    <div class="bg-white dark:bg-dark-card rounded-2xl overflow-hidden card">
+      <div class="relative">
+        <img src="${p.image}" alt="${p.title}" class="w-full h-44 object-cover" loading="lazy" />
+        <span class="absolute top-2 left-2 ${p.condition==='thrift'?'pill-coral':'pill-violet'}">
+          ${p.condition==='thrift'?'♻️ Thrift':'⭐ New'}
+        </span>
+        ${disc > 0 ? `<span class="absolute top-2 right-8 bg-coral text-white text-[10px] font-black px-1.5 py-0.5 rounded-lg">-${disc}%</span>` : ''}
+        <button onclick="toggleLike(${p.id})" class="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow-sm active:scale-90 transition-transform">
+          <svg class="w-4 h-4 ${liked?'text-red-500 fill-red-500':'text-neutral-400'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+        </button>
+      </div>
+      <div class="p-3">
+        <p class="text-[11px] text-neutral-400 dark:text-neutral-500">${p.brand}</p>
+        <p class="font-bold text-sm text-neutral-900 dark:text-white leading-tight mt-0.5 truncate">${p.title}</p>
+        <div class="flex items-center gap-1 mt-1">
+          <span class="font-black text-sm text-violet dark:text-violet-light">₦${p.price.toLocaleString()}</span>
+          ${p.oldPrice ? `<span class="text-xs text-neutral-400 line-through">₦${p.oldPrice.toLocaleString()}</span>` : ''}
+        </div>
+        <div class="flex items-center gap-1 mt-1">
+          <span class="text-gold text-xs">★</span>
+          <span class="text-xs font-semibold text-neutral-600 dark:text-neutral-400">${p.rating}</span>
+          <span class="text-xs text-neutral-400">(${p.reviews})</span>
+        </div>
+        <button class="w-full mt-2 grad text-white text-xs font-bold py-2 rounded-xl active:scale-95 transition-transform">Add to Cart</button>
+      </div>
+    </div>`;
+}
+
+function productCardList(p) {
+  const disc = p.oldPrice ? Math.round((1 - p.price/p.oldPrice)*100) : 0;
+  const liked = likedIds.has(p.id);
+  return `
+    <div class="bg-white dark:bg-dark-card rounded-2xl overflow-hidden card flex gap-3 p-3">
+      <div class="relative flex-shrink-0">
+        <img src="${p.image}" alt="${p.title}" class="w-24 h-28 rounded-xl object-cover" loading="lazy" />
+        <span class="absolute top-1 left-1 ${p.condition==='thrift'?'pill-coral':'pill-violet'}">
+          ${p.condition==='thrift'?'♻️':'⭐'}
+        </span>
+      </div>
+      <div class="flex-1 min-w-0 py-1">
+        <p class="text-[11px] text-neutral-400 dark:text-neutral-500">${p.brand} ${p.verified?'✓':''}</p>
+        <p class="font-bold text-sm text-neutral-900 dark:text-white leading-tight mt-0.5">${p.title}</p>
+        <div class="flex items-center gap-1 mt-1">
+          <span class="font-black text-base text-violet dark:text-violet-light">₦${p.price.toLocaleString()}</span>
+          ${p.oldPrice ? `<span class="text-xs text-neutral-400 line-through">₦${p.oldPrice.toLocaleString()}</span>` : ''}
+          ${disc > 0 ? `<span class="text-xs font-bold text-coral">-${disc}%</span>` : ''}
+        </div>
+        <div class="flex items-center gap-1 mt-1">
+          <span class="text-gold text-xs">★</span>
+          <span class="text-xs text-neutral-500">${p.rating} (${p.reviews})</span>
+        </div>
+        <div class="flex items-center gap-2 mt-2">
+          <button class="grad text-white text-xs font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-transform">Buy Now</button>
+          <button onclick="toggleLike(${p.id})" class="w-8 h-8 rounded-xl bg-neutral-100 dark:bg-dark-border flex items-center justify-center active:scale-95 transition-transform">
+            <svg class="w-4 h-4 ${liked?'text-red-500 fill-red-500':'text-neutral-400'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function toggleLike(id) {
+  if (likedIds.has(id)) likedIds.delete(id); else likedIds.add(id);
+  renderMarket();
+  renderTrending();
+  renderProfileTab(profileTabState);
+}
+
+// ══════════════════════════════════════════
+// HOME
+// ══════════════════════════════════════════
+function renderTrending() {
+  const container = document.getElementById('trendingProducts');
+  if (!container) return;
+  const trending = products.slice(0,5);
+  container.innerHTML = trending.map(p => {
+    const liked = likedIds.has(p.id);
+    return `
+      <div class="flex-shrink-0 w-36 bg-white dark:bg-dark-card rounded-2xl overflow-hidden card">
+        <div class="relative">
+          <img src="${p.image}" alt="${p.title}" class="w-full h-44 object-cover" loading="lazy" />
+          <button onclick="toggleLike(${p.id})" class="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow-sm">
+            <svg class="w-3.5 h-3.5 ${liked?'text-red-500 fill-red-500':'text-neutral-400'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+          </button>
+        </div>
+        <div class="p-2.5">
+          <p class="font-bold text-xs text-neutral-900 dark:text-white truncate">${p.title}</p>
+          <p class="font-black text-sm text-violet dark:text-violet-light mt-1">₦${p.price.toLocaleString()}</p>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderHomeSquads() {
+  const container = document.getElementById('homeSquads');
+  if (!container) return;
+  const mySquads = squads.filter(s => s.joined);
+  container.innerHTML = mySquads.map(s => {
+    const pct = Math.round(s.saved / s.target * 100);
+    return `
+      <div class="bg-white dark:bg-dark-card rounded-2xl overflow-hidden card">
+        <div class="bg-gradient-to-r ${s.theme} px-4 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">${s.emoji}</span>
+            <div>
+              <p class="text-white font-black text-sm">${s.name}</p>
+              <p class="text-white/70 text-xs">${s.members} members</p>
+            </div>
+          </div>
+          <p class="text-white font-black">${pct}%</p>
+        </div>
+        <div class="px-4 py-3">
+          <div class="h-2 bg-neutral-100 dark:bg-dark-border rounded-full overflow-hidden mb-2">
+            <div class="h-full grad rounded-full transition-all" style="width:${pct}%"></div>
+          </div>
+          <div class="flex justify-between text-xs text-neutral-500 dark:text-neutral-400">
+            <span>₦${s.saved.toLocaleString()} saved</span>
+            <span>₦${s.target.toLocaleString()} goal</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// SQUADS
+// ══════════════════════════════════════════
+function squadTab(tab) {
+  squadTabState = tab;
+  const tabs = { my: document.getElementById('tabMySquads'), discover: document.getElementById('tabDiscover') };
+  Object.entries(tabs).forEach(([t, el]) => {
+    if (!el) return;
+    if (t === tab) { el.classList.add('bg-violet','text-white','shadow-sm'); el.classList.remove('text-neutral-500','dark:text-neutral-400'); }
+    else { el.classList.remove('bg-violet','text-white','shadow-sm'); el.classList.add('text-neutral-500','dark:text-neutral-400'); }
+  });
+  renderSquads();
+}
+
+function renderSquads() {
+  const container = document.getElementById('squadsContainer');
+  if (!container) return;
+  const list = squadTabState === 'my' ? squads.filter(s => s.joined) : squads.filter(s => !s.joined);
+  if (list.length === 0) {
+    container.innerHTML = `<div class="text-center py-8 text-neutral-400">
+      <p class="text-3xl mb-2">👥</p>
+      <p class="font-bold">No squads yet</p>
+      <p class="text-sm mt-1">Join a squad below or create your own</p>
+    </div>`;
+    return;
+  }
+  container.innerHTML = list.map(s => {
+    const pct = Math.round(s.saved / s.target * 100);
+    return `
+      <div class="bg-white dark:bg-dark-card rounded-2xl overflow-hidden card">
+        <div class="bg-gradient-to-r ${s.theme} px-4 py-4">
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-2">
+              <span class="text-3xl">${s.emoji}</span>
+              <div>
+                <p class="text-white font-black">${s.name}</p>
+                <p class="text-white/70 text-xs">${s.members} members • ₦${s.weekly.toLocaleString()}/week</p>
+              </div>
+            </div>
+            <p class="text-white font-black text-xl">${pct}%</p>
+          </div>
+          <div class="progress-bar mt-2">
+            <div class="progress-fill" style="width:${pct}%"></div>
+          </div>
+          <div class="flex justify-between text-white/70 text-xs mt-1">
+            <span>₦${s.saved.toLocaleString()} saved</span>
+            <span>Goal: ₦${s.target.toLocaleString()}</span>
+          </div>
+        </div>
+        <div class="px-4 py-3 flex items-center justify-between">
+          <div class="flex -space-x-2">
+            ${[1,2,3].map(i=>`<img src="https://picsum.photos/seed/sq${s.id}${i}/24/24" class="w-7 h-7 rounded-full border-2 border-white dark:border-dark-card" />`).join('')}
+            <div class="w-7 h-7 rounded-full border-2 border-white dark:border-dark-card bg-neutral-100 dark:bg-dark-border flex items-center justify-center">
+              <span class="text-[9px] font-bold text-neutral-500">+${s.members-3}</span>
+            </div>
+          </div>
+          ${s.joined
+            ? `<span class="text-xs font-bold text-teal-500 bg-teal-50 dark:bg-teal-900/20 px-3 py-1 rounded-full">✓ Joined</span>`
+            : `<button class="grad text-white font-bold text-xs px-4 py-1.5 rounded-xl active:scale-95 transition-transform">Join Squad</button>`
+          }
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// INVESTMENT CLUBS
+// ══════════════════════════════════════════
+function investTab(tab) {
+  investTabState = tab;
+  const tabClubs = document.getElementById('tabClubs');
+  const tabPortfolio = document.getElementById('tabPortfolio');
+  const investCont = document.getElementById('investContainer');
+  const portfolioCont = document.getElementById('portfolioContainer');
+
+  if (tab === 'clubs') {
+    tabClubs.classList.add('bg-violet','text-white'); tabClubs.classList.remove('text-neutral-500','dark:text-neutral-400');
+    tabPortfolio.classList.remove('bg-violet','text-white'); tabPortfolio.classList.add('text-neutral-500','dark:text-neutral-400');
+    investCont.style.display = 'flex'; investCont.style.flexDirection = 'column';
+    portfolioCont.style.display = 'none';
+  } else {
+    tabPortfolio.classList.add('bg-violet','text-white'); tabPortfolio.classList.remove('text-neutral-500','dark:text-neutral-400');
+    tabClubs.classList.remove('bg-violet','text-white'); tabClubs.classList.add('text-neutral-500','dark:text-neutral-400');
+    investCont.style.display = 'none';
+    portfolioCont.style.display = 'block';
+    renderPortfolio();
+  }
+}
+
+function renderInvest() {
+  const container = document.getElementById('investContainer');
+  if (!container) return;
+  container.innerHTML = clubs.map(c => {
+    const pct = Math.round(c.raised / c.target * 100);
+    return `
+      <div class="bg-white dark:bg-dark-card rounded-2xl p-4 card">
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl grad flex items-center justify-center text-2xl shadow-lg">${c.emoji}</div>
+            <div>
+              <p class="font-black text-base">${c.name}</p>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400">${c.desc}</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-black px-2 py-1 rounded-lg ${c.tag.includes('Trending')?'bg-coral/10 text-coral':c.tag.includes('ROI')?'bg-teal-50 text-teal-600 dark:bg-teal-900/20 dark:text-teal-400':c.tag.includes('Members')?'bg-violet/10 text-violet dark:text-violet-light':'bg-gold/10 text-gold'}">${c.tag}</span>
+        </div>
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <p class="text-xs text-neutral-400">Projected ROI</p>
+            <p class="font-black text-lg text-teal-500">+${c.roi}%</p>
+          </div>
+          <div class="text-right">
+            <p class="text-xs text-neutral-400">${c.investors} investors</p>
+            <p class="text-xs font-bold text-neutral-500 dark:text-neutral-400">Min: ₦${c.minInvest.toLocaleString()}</p>
+          </div>
+        </div>
+        <div class="h-2 bg-neutral-100 dark:bg-dark-border rounded-full overflow-hidden mb-1.5">
+          <div class="h-full bg-teal-500 rounded-full" style="width:${pct}%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-neutral-400 mb-3">
+          <span>₦${(c.raised/1000000).toFixed(1)}M raised</span>
+          <span>${pct}% of ₦${(c.target/1000000).toFixed(0)}M</span>
+        </div>
+        <button onclick="openInvestModal(${c.id})" class="w-full grad text-white font-extrabold py-3 rounded-xl active:scale-95 transition-transform">
+          Invest Now 🚀
+        </button>
+      </div>`;
+  }).join('');
+}
+
+let selectedAmount = null;
+let selectedClubId = null;
+
+function openInvestModal(clubId) {
+  selectedClubId = clubId;
+  selectedAmount = null;
+  const club = clubs.find(c => c.id === clubId);
+  document.getElementById('modalClubName').textContent = 'Invest in ' + club.name;
+  document.getElementById('modalClubDesc').textContent = 'Projected ' + club.roi + '% annual return • Min ₦' + club.minInvest.toLocaleString();
+  document.getElementById('amountInput').value = '';
+  document.querySelectorAll('.amount-btn').forEach(b => {
+    b.classList.remove('border-violet','border-2');
+    b.classList.add('border-neutral-100','dark:border-dark-border');
+  });
+  document.getElementById('investModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('investModal').classList.remove('open');
+}
+
+function setAmount(n) {
+  selectedAmount = n;
+  document.getElementById('amountInput').value = n;
+  document.querySelectorAll('.amount-btn').forEach(b => {
+    const match = parseInt(b.textContent.replace(/[₦k]/g,'')) * (b.textContent.includes('k') ? 1000 : 1) === n;
+    if (match) { b.classList.add('border-violet'); b.classList.remove('border-neutral-100','dark:border-dark-border'); }
+    else { b.classList.remove('border-violet'); b.classList.add('border-neutral-100','dark:border-dark-border'); }
+  });
+}
+
+function confirmInvest() {
+  const val = parseInt(document.getElementById('amountInput').value) || selectedAmount;
+  if (!val || val < 1000) { alert('Please enter a valid amount (min ₦1,000)'); return; }
+  closeModal();
+  const club = clubs.find(c => c.id === selectedClubId);
+  setTimeout(() => alert('🎉 Investment of ₦' + val.toLocaleString() + ' in "' + club.name + '" confirmed!\n\nWelcome to the club!'), 300);
+}
+
+function renderPortfolio() {
+  const list = document.getElementById('portfolioList');
+  if (!list) return;
+  list.innerHTML = myInvestments.map(inv => `
+    <div class="flex items-center justify-between py-3 border-b border-neutral-100 dark:border-dark-border last:border-0">
+      <div>
+        <p class="font-bold text-sm">${inv.name}</p>
+        <p class="text-xs text-neutral-400">Invested: ₦${inv.amount.toLocaleString()}</p>
+      </div>
+      <div class="text-right">
+        <p class="font-black text-base">₦${inv.currentValue.toLocaleString()}</p>
+        <p class="text-xs font-bold text-teal-500">+${inv.roi}%</p>
+      </div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// PROFILE
+// ══════════════════════════════════════════
+function toggleBioEdit() {
+  const display = document.getElementById('bioDisplay');
+  const edit = document.getElementById('bioEdit');
+  display.classList.toggle('hidden');
+  edit.classList.toggle('hidden');
+}
+
+function saveBio() {
+  const val = document.getElementById('bioText').value;
+  document.querySelector('#bioDisplay p').textContent = val;
+  toggleBioEdit();
+}
+
+function profileTab(tab) {
+  profileTabState = tab;
+  ['purchases','listings','wishlist'].forEach(t => {
+    const btn = document.getElementById('ptab-' + t);
+    if (!btn) return;
+    if (t === tab) {
+      btn.classList.add('bg-white','dark:bg-dark-border','text-violet','dark:text-violet-light','shadow-sm');
+      btn.classList.remove('text-neutral-500','dark:text-neutral-400');
+    } else {
+      btn.classList.remove('bg-white','dark:bg-dark-border','text-violet','dark:text-violet-light','shadow-sm');
+      btn.classList.add('text-neutral-500','dark:text-neutral-400');
+    }
+  });
+  renderProfileTab(tab);
+}
+
+function renderProfileTab(tab) {
+  const container = document.getElementById('profileTabContent');
+  if (!container) return;
+
+  if (tab === 'purchases') {
+    const purchases = products.slice(0,3);
+    container.innerHTML = `<div class="space-y-3">${purchases.map(p => `
+      <div class="flex gap-3 bg-white dark:bg-dark-card rounded-2xl p-3 card">
+        <img src="${p.image}" alt="${p.title}" class="w-16 h-20 rounded-xl object-cover flex-shrink-0" />
+        <div class="flex-1 min-w-0 py-1">
+          <p class="text-xs text-neutral-400">${p.brand}</p>
+          <p class="font-bold text-sm truncate">${p.title}</p>
+          <p class="font-black text-violet dark:text-violet-light text-sm mt-1">₦${p.price.toLocaleString()}</p>
+          <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ${p.condition==='thrift'?'pill-coral':'pill-violet'}">${p.condition==='thrift'?'Thrift':'New'}</span>
+        </div>
+        <div class="flex flex-col items-end gap-1 py-1">
+          <span class="text-xs text-teal-600 dark:text-teal-400 font-semibold bg-teal-50 dark:bg-teal-900/20 px-2 py-0.5 rounded-full">Delivered</span>
+          <button class="text-xs text-violet font-semibold">Review</button>
+        </div>
+      </div>`).join('')}</div>`;
+  } else if (tab === 'listings') {
+    container.innerHTML = `<div class="text-center py-12 bg-white dark:bg-dark-card rounded-3xl card">
+      <p class="text-4xl mb-3">📦</p>
+      <p class="font-black text-neutral-600 dark:text-neutral-300">No listings yet</p>
+      <p class="text-sm text-neutral-400 mt-1 mb-4">Your listed items will appear here</p>
+      <button class="grad text-white font-bold text-sm py-2.5 px-5 rounded-xl active:scale-95 transition-transform">List Your First Item</button>
+    </div>`;
+  } else {
+    const wishlist = products.filter(p => likedIds.has(p.id));
+    if (wishlist.length === 0) {
+      container.innerHTML = `<div class="text-center py-12 bg-white dark:bg-dark-card rounded-3xl card">
+        <p class="text-4xl mb-3">❤️</p>
+        <p class="font-black text-neutral-600 dark:text-neutral-300">Nothing saved yet</p>
+        <p class="text-sm text-neutral-400 mt-1 mb-4">Heart items in the marketplace</p>
+        <button onclick="showScreen('marketplace')" class="grad text-white font-bold text-sm py-2.5 px-5 rounded-xl active:scale-95 transition-transform">Browse Marketplace</button>
+      </div>`;
+    } else {
+      container.innerHTML = `<div class="space-y-3">${wishlist.map(p => `
+        <div class="flex gap-3 bg-white dark:bg-dark-card rounded-2xl p-3 card">
+          <img src="${p.image}" alt="${p.title}" class="w-16 h-20 rounded-xl object-cover flex-shrink-0" />
+          <div class="flex-1 min-w-0 py-1">
+            <p class="text-xs text-neutral-400">${p.brand}</p>
+            <p class="font-bold text-sm truncate">${p.title}</p>
+            <p class="font-black text-violet dark:text-violet-light text-sm mt-1">₦${p.price.toLocaleString()}</p>
+          </div>
+          <button class="self-center grad text-white text-xs font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-transform">Buy Now</button>
+        </div>`).join('')}</div>`;
+    }
+  }
+}
+
+function signOut() {
+  if (confirm('Sign out of Splugery?')) {
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('investModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>
